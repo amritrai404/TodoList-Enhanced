@@ -13,12 +13,19 @@ const Page = () => {
   const [totalTasks, setTotalTasks] = useState(0);
   const router = useRouter();
 
-  // Mark component as hydrated once mounted
+  // For date and time display
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  // Update date and time every second
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     setHydrated(true);
   }, []);
 
-  // Load data from localStorage after hydration
   useEffect(() => {
     if (!hydrated) return;
 
@@ -31,7 +38,6 @@ const Page = () => {
     setTotalTasks(savedTasks.length + completedTasksList.length);
   }, [hydrated]);
 
-  // Disable context menu
   useEffect(() => {
     const handleContextMenu = (event) => {
       event.preventDefault();
@@ -44,12 +50,10 @@ const Page = () => {
     };
   }, []);
 
-  // Update pendingTasks count when mainTask changes
   useEffect(() => {
     setPendingTasks(mainTask.length);
   }, [mainTask]);
 
-  // Save data to localStorage on changes
   useEffect(() => {
     if (!hydrated) return;
 
@@ -90,15 +94,6 @@ const Page = () => {
     setCompletedTasks(completedTasks + 1);
   };
 
-  const editHandler = (e, i, taskName, taskDesc) => {
-    e.preventDefault();
-    router.push(
-      `/edit?name=${encodeURIComponent(
-        taskName
-      )}&description=${encodeURIComponent(taskDesc)}&index=${i}`
-    );
-  };
-
   const notCompletedHandler = (e, i) => {
     e.preventDefault();
     setMainTask([...mainTask, completed[i]]);
@@ -117,161 +112,162 @@ const Page = () => {
   };
 
   if (!hydrated) {
-    // Render nothing or loading until hydration completes
-    return null;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-xl text-black">Loading...</p>
+      </div>
+    );
   }
 
-  let renderTask = <h2>No Task Available</h2>;
-  if (mainTask.length > 0) {
-    renderTask = mainTask.map((t, i) => {
-      return (
-        <li
-          key={i + 1}
-          className="task flex w-[98vw] justify-between gap-2 bg-indigo-50 rounded-xl shadow-lg text-black p-3"
-        >
-          <div className="taskDetails flex flex-col w-[50vw] justify-center items-start py-3 px-5">
-            <div className="flex gap-2 justify-center items-center">
-              <div className="tNum px-4 py-2 rounded-full bg-indigo-200">{i + 1}</div>
-              <h5 className="tName font-semibold text-xl">{t.taskName}</h5>
-            </div>
-            <h6 className="tDesc ml-[50px] max-w-[50vw] font-semibold text-sm">
-              {t.taskDesc}
-            </h6>
-          </div>
-          <div className="taskButtons flex gap-3 justify-center items-center">
-            <button
-              className="bg-green-400 transition duration-300 ease-in-out transform font-semibold hover:bg-green-600 hover:scale-110 px-10 py-2 text-xl rounded-lg"
-              onClick={(e) => completeHandler(e, i)}
-            >
-              Completed
-            </button>
-            <button
-              className="bg-red-400 transition duration-300 ease-in-out transform font-semibold hover:scale-110 hover:bg-red-600 px-10 py-2 text-xl rounded-lg"
-              onClick={(e) => deleteHandler(e, i)}
-            >
-              Delete
-            </button>
-            <button
-              className="bg-amber-300 transition duration-300 ease-in-out transform font-semibold hover:scale-110 hover:bg-amber-600 text-xl px-10 py-2 rounded-lg"
-              onClick={(e) => editHandler(e, i, t.taskName, t.taskDesc)}
-            >
-              Edit
-            </button>
-          </div>
-        </li>
-      );
-    });
-  }
-
-  let renderCompletedTask = <h2>No Task Completed</h2>;
-  if (completed.length > 0) {
-    renderCompletedTask = completed.map((t, i) => {
-      return (
-        <li
-          key={i + 1}
-          className="task flex w-[98vw] justify-between gap-2 bg-green-200 rounded-xl shadow-lg text-black p-3"
-        >
-          <div className="taskDetails flex flex-col w-[50vw] justify-center items-start py-3 px-5">
-            <div className="flex gap-2 justify-center items-center">
-              <div className="tNum px-4 py-2 rounded-full bg-green-300">{i + 1}</div>
-              <h5 className="tName font-semibold text-xl">{t.taskName}</h5>
-            </div>
-            <h6 className="tDesc ml-[50px] max-w-[50vw] font-semibold text-sm">{t.taskDesc}</h6>
-          </div>
-          <div className="taskButtons flex gap-3 justify-center items-center">
-            <button
-              className="bg-amber-400 transition duration-300 ease-in-out transform font-semibold hover:bg-amber-600 hover:scale-110 px-10 py-2 text-xl rounded-lg"
-              onClick={(e) => notCompletedHandler(e, i)}
-            >
-              Incomplete Task
-            </button>
-            <button
-              className="bg-red-400 transition duration-300 ease-in-out transform font-semibold hover:scale-110 hover:bg-red-600 text-xl px-10 py-2 rounded-lg"
-              onClick={(e) => completedDeleteHandler(e, i)}
-            >
-              Delete Task
-            </button>
-          </div>
-        </li>
-      );
-    });
-  }
+  // Format date, day and time
+  const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+  const formattedDate = currentDateTime.toLocaleDateString(undefined, options);
+  const formattedTime = currentDateTime.toLocaleTimeString();
 
   return (
-    <>
-      <div className="flex justify-center items-center gap-2">
-        <img src="./favicon.ico" alt="Icon" width="50" />
-        <h1 className="text-4xl font-bold text-center py-5">TodoList</h1>
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 py-4 bg-white shadow-sm">
+        <img src="./favicon.ico" alt="Icon" className="h-12 w-12" />
+        <div className="text-center">
+          <h1 className="text-3xl sm:text-4xl font-bold text-black">TodoList</h1>
+          <p className="text-black text-sm sm:text-base mt-1">{formattedDate}, {formattedTime}</p>
+        </div>
       </div>
-      <hr />
-      <form className="taskCreaterForm flex justify-center items-baseline gap-10 p-10">
-        <input
-          type="text"
-          value={taskName}
-          onChange={(e) => setTaskName(capitalizeEachLine(e.target.value))}
-          className="text-xl outline-0 text-white p-3 rounded-xl border-2 border-green-400"
-          id="taskName"
-          placeholder="Enter Task Name Here"
-        />
-        <textarea
-          rows="2"
-          cols="50"
-          style={{ resize: "none" }}
-          value={taskDesc}
-          onChange={(e) => setTaskDesc(capitalizeEachLine(e.target.value))}
-          className="text-xl outline-0 text-white p-3 rounded-xl border-2 border-green-400"
-          id="taskDesc"
-          placeholder="Enter Task Description Here"
-        />
-        <div className="flex flex-col gap-2" id="taskButtons">
-          <button
-            id="addTask"
-            className="px-4 py-2 text-2xl text-black bg-green-400 hover:bg-green-600 rounded-xl font-bold shadow-lg transition duration-300 ease-in-out transform hover:scale-110"
-            onClick={submitHandler}
-          >
-            Add Task
-          </button>
-          <button
-            id="removeAllTasks"
-            onClick={(e) => {
-              e.preventDefault();
-              setMainTask([]);
-              setCompleted([]);
-              setCompletedTasks(0);
-              setTotalTasks(0);
-            }}
-            className="bg-red-400 text-black transition duration-300 ease-in-out transform font-extrabold hover:scale-110 hover:bg-red-600 text-xl px-10 py-2 rounded-lg"
-          >
-            Remove all Tasks
-          </button>
+
+      {/* Task Creation Form */}
+      <form className="flex flex-col md:flex-row justify-center items-center md:items-baseline gap-4 p-4 sm:p-6 md:p-10">
+        <div className="flex flex-col md:flex-row gap-4 w-full max-w-4xl">
+          <input
+            type="text"
+            value={taskName}
+            onChange={(e) => setTaskName(capitalizeEachLine(e.target.value))}
+            className="flex-1 text-xl outline-0 text-black p-3 rounded-xl border-2 border-green-400 bg-white"
+            id="taskName"
+            placeholder="Enter Task Name Here"
+          />
+          <textarea
+            rows="2"
+            value={taskDesc}
+            onChange={(e) => setTaskDesc(capitalizeEachLine(e.target.value))}
+            className="flex-1 text-xl outline-0 text-black p-3 rounded-xl border-2 border-green-400 bg-white"
+            id="taskDesc"
+            placeholder="Enter Task Description Here"
+          />
+          <div className="flex flex-col gap-2 w-full md:w-auto" id="taskButtons">
+            <button
+              id="addTask"
+              className="px-4 py-2 text-xl md:text-2xl text-black bg-green-400 hover:bg-green-600 rounded-xl font-bold shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+              onClick={submitHandler}
+            >
+              Add Task
+            </button>
+          </div>
         </div>
       </form>
-      <hr />
-      <div className="grid grid-flow-col gap-5 p-5">
-        <div className="completedTasks bg-green-200 p-5 rounded-xl shadow-lg text-black hover:scale-105 transition duration-300 ease-in-out">
-          <h2 className="text-5xl font-semibold">{completedTasks}</h2>
-          <h3 className="text-l font-semibold">Completed Task</h3>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 sm:p-5 max-w-6xl mx-auto">
+        <div className="completedTasks bg-green-200 p-4 sm:p-5 rounded-xl shadow-lg text-black hover:scale-105 transition duration-300 ease-in-out">
+          <h2 className="text-4xl sm:text-5xl font-semibold text-center text-black">{completedTasks}</h2>
+          <h3 className="text-base sm:text-lg font-semibold text-center text-black">Completed Task</h3>
         </div>
-        <div className="pendingTasks bg-indigo-100 p-5 rounded-xl shadow-lg text-black hover:scale-105 transition duration-300 ease-in-out">
-          <h2 className="text-5xl font-semibold">{pendingTasks}</h2>
-          <h3 className="text-l font-semibold">Pending Task</h3>
+        <div className="pendingTasks bg-indigo-100 p-4 sm:p-5 rounded-xl shadow-lg text-black hover:scale-105 transition duration-300 ease-in-out">
+          <h2 className="text-4xl sm:text-5xl font-semibold text-center text-black">{pendingTasks}</h2>
+          <h3 className="text-base sm:text-lg font-semibold text-center text-black">Pending Task</h3>
         </div>
-        <div className="totalTasks bg-gray-100 p-5 rounded-xl shadow-lg text-black hover:scale-105 transition duration-300 ease-in-out">
-          <h2 className="text-5xl font-semibold">{totalTasks}</h2>
-          <h3 className="text-l font-semibold">Total Task</h3>
+        <div className="totalTasks bg-gray-100 p-4 sm:p-5 rounded-xl shadow-lg text-black hover:scale-105 transition duration-300 ease-in-out">
+          <h2 className="text-4xl sm:text-5xl font-semibold text-center text-black">{totalTasks}</h2>
+          <h3 className="text-base sm:text-lg font-semibold text-center text-black">Total Task</h3>
         </div>
       </div>
-      <hr />
-      <div className="flex flex-col justify-center items-center gap-5 text-xl my-3">
-        <h2 className="text-2xl font-bold">Pending Tasks: </h2>
-        <ul className="flex flex-col width-[100vw] gap-2">{renderTask}</ul>
+
+      {/* Pending Tasks */}
+      <div className="flex flex-col justify-center items-center gap-5 text-xl my-3 px-4">
+        <h2 className="text-2xl font-bold text-black">Pending Tasks:</h2>
+        {mainTask.length === 0 ? (
+          <p className="text-gray-500 py-4">No pending tasks available</p>
+        ) : (
+          <ul className="flex flex-col gap-3 w-full max-w-6xl">
+            {mainTask.map((t, i) => (
+              <li
+                key={i}
+                className="flex flex-col md:flex-row w-full justify-between gap-3 bg-indigo-50 rounded-xl shadow-lg text-black p-3"
+              >
+                <div className="taskDetails flex flex-col w-full md:w-2/3 justify-center items-start py-2 px-3 sm:py-3 sm:px-5">
+                  <div className="flex gap-2 justify-start items-center">
+                    <div className="tNum px-3 py-1 sm:px-4 sm:py-2 rounded-full bg-indigo-200 text-sm sm:text-base">
+                      {i + 1}
+                    </div>
+                    <h5 className="tName font-semibold text-lg sm:text-xl text-black">{t.taskName}</h5>
+                  </div>
+                  <h6 className="tDesc ml-0 sm:ml-10 mt-2 sm:mt-0 max-w-full font-semibold text-xs sm:text-sm text-black">
+                    {t.taskDesc}
+                  </h6>
+                </div>
+                <div className="taskButtons flex flex-col sm:flex-row gap-2 justify-center items-center">
+                  <button
+                    className="bg-green-400 w-full sm:w-auto transition duration-300 ease-in-out font-semibold hover:bg-green-600 hover:scale-105 px-4 py-2 sm:px-6 sm:py-2 text-sm sm:text-base rounded-lg"
+                    onClick={(e) => completeHandler(e, i)}
+                  >
+                    Completed
+                  </button>
+                  <button
+                    className="bg-red-400 w-full sm:w-auto transition duration-300 ease-in-out font-semibold hover:scale-105 hover:bg-red-600 px-4 py-2 sm:px-6 sm:py-2 text-sm sm:text-base rounded-lg"
+                    onClick={(e) => deleteHandler(e, i)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      <hr />
-      <div className="flex flex-col justify-center items-center gap-5 text-xl mt-3">
-        <h2 className="text-2xl font-bold">Completed Tasks: </h2>
-        <ul className="flex flex-col width-[100vw] gap-2">{renderCompletedTask}</ul>
+
+      {/* Completed Tasks */}
+      <div className="flex flex-col justify-center items-center gap-5 text-xl my-6 px-4">
+        <h2 className="text-2xl font-bold text-black">Completed Tasks:</h2>
+        {completed.length === 0 ? (
+          <p className="text-gray-500 py-4">No completed tasks available</p>
+        ) : (
+          <ul className="flex flex-col gap-3 w-full max-w-6xl">
+            {completed.map((t, i) => (
+              <li
+                key={i}
+                className="flex flex-col md:flex-row w-full justify-between gap-3 bg-green-200 rounded-xl shadow-lg text-black p-3"
+              >
+                <div className="taskDetails flex flex-col w-full md:w-2/3 justify-center items-start py-2 px-3 sm:py-3 sm:px-5">
+                  <div className="flex gap-2 justify-start items-center">
+                    <div className="tNum px-3 py-1 sm:px-4 sm:py-2 rounded-full bg-green-300 text-sm sm:text-base">
+                      {i + 1}
+                    </div>
+                    <h5 className="tName font-semibold text-lg sm:text-xl text-black">{t.taskName}</h5>
+                  </div>
+                  <h6 className="tDesc ml-0 sm:ml-10 mt-2 sm:mt-0 max-w-full font-semibold text-xs sm:text-sm text-black">
+                    {t.taskDesc}
+                  </h6>
+                </div>
+                <div className="taskButtons flex flex-col sm:flex-row gap-2 justify-center items-center">
+                  <button
+                    className="bg-amber-400 w-full sm:w-auto transition duration-300 ease-in-out font-semibold hover:bg-amber-600 hover:scale-105 px-4 py-2 sm:px-6 sm:py-2 text-sm sm:text-base rounded-lg"
+                    onClick={(e) => notCompletedHandler(e, i)}
+                  >
+                    Incomplete Task
+                  </button>
+                  <button
+                    className="bg-red-400 w-full sm:w-auto transition duration-300 ease-in-out font-semibold hover:scale-105 hover:bg-red-600 text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-2 rounded-lg"
+                    onClick={(e) => completedDeleteHandler(e, i)}
+                  >
+                    Delete Task
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
